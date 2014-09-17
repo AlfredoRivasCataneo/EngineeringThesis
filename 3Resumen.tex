@@ -1,0 +1,50 @@
+\chapter{Resumen}
+
+La medición y control de fuerzas en un sistema robótico siempre ha presentado gran importancia e interés en todo tipo de aplicaciones robóticas. En gran variedad de estas aplicaciones, como puede ser el ensamblaje de productos en una línea de montaje, el corte de distintos materiales o el lijado o pulido de superficies, deben controlarse y medirse las fuerzas ejercidas y sufridas por el robot en su interacción con el entorno, con el fin de prevenir daños y realizar una ejecución más precisa y eficaz de las distintas tareas requeridas en cada aplicación. \par 
+
+Esta situación es igualmente importante en sistemas teleoperados, en los que es un operador humano el que realiza las tareas de control del sistema robotizado. Resulta más clara esta importancia al analizar qué fuentes de información presentan mayor influencia a la hora de realizar cualquier tarea cotidiana. En referencia a los sentidos empleados por el ser humano para conocer su entorno, a saber: vista, tacto, oído, gusto y olfato; los dos primeros son los que presentan mayor importancia en la interacción con el entorno para efectuar una manipulación del mismo. \par 
+
+Históricamente, tanto la vista como el tacto han sido los sentidos más ampliamente tenidos en cuenta en sistemas teleoperados. Para una realimentación visual suelen emplearse cámaras y pantallas. En cambio, para realimentaciones hápticas (de fuerzas) existen numerosas alternativas, y la aplicación de las mismas depende en gran medida de la morfología de los dispositivos empleados para el control. \par 
+
+La reflexión de fuerzas en sistemas teleoperados no es, ni mucho menos, un problema de reciente aparición, pero debido a la gran variedad y heterogeneidad existente en configuraciones robóticas, no puede mencionarse un método único y válido para los distintos sistemas robóticos existentes. Además, la gran variedad existente en las prioridades fijadas en cada sistema para las distintas aplicaciones incrementa aún más esa diversidad de técnicas adoptadas para la realimentación de fuerzas. \par 
+
+La gran importancia existente en la reflexión de fuerzas, que permita una correcta manipulación de objetos de manera precisa, propicia la realización del presente trabajo. Se desarrollará, por tanto, un método o algoritmo de control encargado de identificar las fuerzas externas aplicadas al sistema teleoperado, para poder efectuar posteriormente una reflexión de las mismas al operario. \par  
+
+Para ello, se empleará un sistema teleoperado, perteneciente al Grupo de Investigación \emph{Robots y Máquinas Inteligentes}, existente en el \emph{Centro de Automática y Robótica} (CAR), adscrito a la \emph{Universidad Politécnica de Madrid} (UPM) y al \emph{Consejo Superior de Investigaciones Científicas} (CSIC), el cual consta de un manipulador robótico industrial al que se le han incorporado una serie de sensores que permiten conocer el entorno, como un sensor fuerza-par o un sensor inercial. \par 
+
+Para llevar a cabo este cometido se hará uso de la teoría de control moderna, con la utilización de los denominados \emph{modelos en el espacio de estado}, en los cuales, el enfoque realizado al modelado del sistema, basado en variables de estado, facilita la aplicación de una fusión sensorial, que permite un conocimiento más completo de la evolución y situación del sistema. Además, el uso de un algoritmo basado en el \emph{Filtro de Kalman Extendido} (debido a la no linealidad del sistema) permite incluir aspectos estocásticos de procesos físicos al modelo, con el que se podrán realizar estimaciones más precisas del sistema, debido a la inherente imprecisión propia de cualquier sensor. \par 
+
+Tras un modelado del sistema, es decir, la obtención de las ecuaciones físicas que describen el sistema, basadas en las conocidas ecuaciones de Newton-Euler, se ha desarrollado un observador del estado, en el que no se han considerado las fuerzas externas en su formulación. El modelo hace uso de la segunda ley de Newton particularizada para un sólido rígido, y su equivalente para movimientos angulares (ecuación de Euler para un sólido rígido). \par 
+
+El principio de funcionamiento del algoritmo estimador de fuerzas externas propuesto se basa en efectuar estimaciones del estado siguiendo el procedimiento marcado para el desarrollo de un \emph{Filtro de Kalman Extendido}, empleando el modelo del observador ya mencionado, en el que no se consideran las fuerzas debidas a la interacción con el entorno. De esta manera, comparando las estimaciones producidas por el observador y la situación real del sistema, medidas por los sensores, se conseguirán identificar las distintas fuerzas externas aplicadas sobre el sistema robótico. \par 
+
+Siguiendo el procedimiento marcado en la última década, en la que los simuladores cobran considerada importancia en la prueba de nuevos modelos y algoritmos de control, y ante la imposibilidad de efectuar ensayos con el sistema real, se realiza un análisis del algoritmo propuesto mediante el uso del simulador multi-robot en 3-Dimensiones \emph{Gazebo} y herramientas del entorno ROS para la emulación de los distintos sensores necesarios para la obtención de datos del entorno. \par 
+
+Antes de emplear el algoritmo en un dispositivo para ejecutarse en tiempo real, se comprobará la validez y efectividad del algoritmo mediante su desarrollo en MATLAB, siendo éste el principal objetivo del trabajo realizado. Se busca comprobar la efectividad del estimador para suprimir las componentes de la fuerza medida por los sensores causadas por la gravedad y la inercia del sistema, mostrando únicamente las fuerzas debidas a la interacción del manipulador robótico con el entorno. \par 
+
+La comprobación de la validez del algoritmo se basa en el análisis de los resultados obtenidos tras la realización de diversos ensayos, en los que se estimulará el sistema variando las distintas entradas del mismo (movimientos y fuerzas externas). De esta manera se simulará la mayor variedad posible de situaciones reales en las que pueda encontrarse el observador, como pueden ser distintas combinaciones de movimientos con aplicación de variadas fuerzas externas. \par 
+
+Una vez efectuados los ensayos pertinentes, y tras el análisis de sus resultados, pueden extraerse una serie de conclusiones acerca del funcionamiento del algoritmo estimador de fuerzas externas propuesto en el presente texto:
+
+\begin{itemize}
+
+\item Ante distintas orientaciones del extremo, la cancelación estática de las fuerzas y momentos medidos por el sensor fuerza par es correcta, pero no perfecta, puesto que existen ciertas componentes de los momentos que aparecen en pequeña medida (del orden de 0.2Nm), debidas a que las magnitudes físicas especificadas en el algoritmo no coinciden exactamente con las reales del sistema. \par 
+
+\item Ante valores de aceleración cercanos o inferiores a \emph{g}, el algoritmo efectúa una aceptable compensación dinámica de los esfuerzos medidos por el sensor fuerza par. Esta efectividad se ve atenuada si las aceleraciones sufridas por el sistema son elevadas (del orden de $30 m/{s^2}$). Esta situación hace que el algoritmo pueda ser utilizado en una gran mayoría de aplicaciones. \par 
+
+\item El algoritmo presenta una respuesta inmediata a los estímulos externos, lo que provoca que no exista retardo entre la aplicación del esfuerzo externo y la detección del mismo más allá del tiempo necesario para efectuar un ciclo de operación del algoritmo, el cual dependerá de la frecuencia con la que se implemente el mismo. \par 
+
+\item En ciertas simulaciones aparecen anomalías en determinados valores, cuya aparición está causada por el motor físico de \emph{Gazebo}, pero igualmente ha de ser considerado, puesto que es probable la existencia de valores anómalos en las medidas de los sensores, y estos resultados muestran la poca robustez existente ante tales medidas erróneas. Dentro del futuro trabajo se considera la inclusión de procesos encaminados a reducir el impacto de estas medidas erróneas. \par 
+
+\end{itemize}
+
+Los resultados obtenidos entran dentro de los comportamientos esperables para el observador, que sin ser perfectos (situaciones en las que la aceleración es superior a \emph{g}, poca robustez ante valores anómalos), podría ser empleado en gran variedad de aplicaciones robóticas. \par  
+
+
+\section*{Palabras clave}
+
+Telerrobótica, teleoperación, observador del estado, fuerzas externas, Filtro de Kalman Extendido, fusión sensorial, \emph{Gazebo}.
+
+\section*{Códigos UNESCO}
+
+Ciencias tecnológicas, tecnología de ordenadores: 330412 dispositivos de control y 330417 sistemas en tiempo real.

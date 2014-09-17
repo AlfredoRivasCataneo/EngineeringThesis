@@ -1,0 +1,56 @@
+\chapter[Relación entre vel. angular y variación de la orientación]{Obtención de la relación entre velocidad angular y derivada de la orientación expresada mediante cuaternios}
+\label{app:demoA1}
+
+Un cuaternio unitario que representa una rotación en un espacio tridimensional euclídeo puede ser representado de la forma:
+
+\[ q = [\cos\frac{\theta}{2}, \boldsymbol{n} \sin\frac{\theta}{2}] 
+ = \cos\frac{\theta}{2} + \sin\frac{\theta}{2}(n_x\boldsymbol{i} + n_y\boldsymbol{j} + n_z\boldsymbol{k}) \] \\
+\noindent
+donde $\boldsymbol{k}$ representa un vector unitario que indica el eje de rotación de un giro de $\theta$ radianes alrededor del mismo. Esta representación recibe el nombre de forma polar de un cuaternio. \par 
+
+Aplicando la Fórmula de Euler para números complejos a un cuaternio, se obtiene la expresión siguiente: 
+
+\begin{equation}
+e^{\frac{\theta}{2}\boldsymbol{n}} = \cos\frac{\theta}{2} + \sin\frac{\theta}{2}(n_x\boldsymbol{i} + n_y\boldsymbol{j} + n_z\boldsymbol{k}) = q
+\end{equation}
+
+Derivando con respecto al tiempo esta expresión se tiene:
+
+\begin{equation}
+\dot{q} = \frac{d q}{dt} = \frac{d}{dt}(e^{\frac{\theta}{2}\boldsymbol{n}}) = 
+	\frac{d}{dt}(\frac{\theta}{2}\boldsymbol{n})e^{\frac{\theta}{2}\boldsymbol{n}} = 
+	(\frac{1}{2}\frac{d\theta}{dt}\boldsymbol{n} + \frac{\theta}{2}\frac{d\boldsymbol{n}}{dt})q
+\end{equation} \\
+\noindent
+en donde puede apreciarse que la primera componente representa la velocidad angular del sólido. Suponiendo para cada intervalo de muestreo una velocidad angular constante, debido a que no se presenta información alguna entre instantes de muestreo, el segundo término puede ser anulado, por lo que la expresión anterior resulta:
+
+\begin{equation}
+\dot{q} = \frac{d q}{dt} = \frac{1}{2}q_\omega \otimes q
+\end{equation}
+\\
+\noindent
+donde $q_\omega$ representa el cuaternio definido por el vector velocidad angular, es decir, $q_\omega = (0,\omega_x,\omega_y,\omega_z)$, y el operador $\otimes$ representa el producto de cuaternios, definido de la forma:
+
+\begin{equation}
+p \otimes r = \begin{pmatrix}
+	r_0p_0 - r_1p_1 - r_2p_2 - r_3p_3 \\
+	r_0p_1 + r_1p_0 - r_2p_3 + r_3p_2 \\
+	r_0p_2 + r_1p_3 + r_2p_0 - r_3p_1 \\
+	r_0p_3 - r_1p_2 + r_2p_1 + r_3p_0
+\end{pmatrix}
+\end{equation}
+
+De esta manera, sustituyendo el cuaternio $p$ por $q_\omega$ y $r$ por $q$, y expresando la relación en forma matricial se obtiene:
+
+\begin{equation}
+\dot{q} = \frac{d q}{dt} = \frac{1}{2}q_\omega \otimes q =  
+	\frac{1}{2}
+	\begin{pmatrix}
+	-q_1 & -q_2 & -q_3 \\ q_0 & q_3 & -q_2 \\ -q_3 & q_0 & q_1 \\ q_2 & -q_1 & q_0
+	\end{pmatrix}
+	\begin{pmatrix}
+	\omega_x \\ \omega_y \\ \omega_z
+	\end{pmatrix}
+\end{equation} \\
+\noindent
+la cual coincide con la expresión empleada para el modelado del sistema descrito en el capítulo \ref{chap:disenoObservador}. \par 

@@ -1,0 +1,89 @@
+\chapter{Conclusiones y trabajos futuros}
+
+Una vez finalizados los experimentos, mostrados en el anterior capítulo, se detallarán a continuación las conclusiones extraídas de los resultados obtenidos en los ensayos, haciendo hincapié en el cumplimiento de los objetivos marcados para el desarrollo del presente trabajo. Posteriormente se desarrollarán varios aspectos que se consideran importantes para ampliar los trabajos efectuados en el texto, como puede ser la prueba del algoritmo en el sistema real, o su implantación en sistemas no teleoperados. \par 
+
+\newpage
+\section{Conclusiones}
+
+A lo largo del anterior capítulo se mostraron los resultados provenientes de la prueba del algoritmo estimador de fuerzas externas planteado en el trabajo en un sistema simulado mediante \emph{Gazebo}, los cuales serán analizados en este capítulo. \par 
+
+En vistas a los objetivos marcados para el trabajo elaborado se analizará también la viabilidad que presenta el algoritmo propuesto a ser implementado en un sistema teleoperado real. \par 
+
+Es preciso remarcar que las conclusiones expuestas en este apartado se basan en los resultados obtenidos al ejecutar el algoritmo estimador de esfuerzos externos en un sistema \emph{simulado}, que aunque cercano a la realidad, aún existe una apreciable diferencia entre ambos entornos. Esta situación hace que las conclusiones extraídas no sean definitivas, sino sujetas a futuros experimentos con el sistema real. \par
+
+En vistas a ciertos aspectos destacados en el apartado \ref{sec:dificultades}, la incertidumbre acerca de la validez de la información obtenida en el entorno simulado, debido a los extraños comportamientos obtenidos en actuadores y sensores, provoca una necesidad de ser cauto a la hora de poder dictaminar conclusiones acerca de los ensayos. \par 
+
+Las conclusiones extraídas de los ensayos efectuados, cuyos resultados han sido mostrados en el anterior capítulo, pueden expresarse en los siguientes apartados: 
+
+\begin{itemize}
+
+\item Ante distintas orientaciones del extremo, la cancelación estática de las fuerzas y momentos medidos por el sensor fuerza par es correcta, pero no perfecta, puesto que existen ciertas componentes de los momentos que aparecen en pequeña medida (del orden de 0.2Nm), debidas a que las magnitudes físicas especificadas en el algoritmo no coinciden exactamente con las reales del sistema. \par 
+
+\item Ante valores de aceleración cercanos o inferiores a \emph{g}, el algoritmo efectúa una aceptable compensación dinámica de los esfuerzos medidos por el sensor fuerza par. Esta efectividad se ve atenuada si las aceleraciones sufridas por el sistema son elevadas (del orden de $30 m/{s^2}$). Esta situación hace que el algoritmo pueda ser utilizado en una gran mayoría de aplicaciones. \par 
+
+\item El algoritmo presenta una respuesta inmediata a los estímulos externos, lo que provoca que no exista retardo entre la aplicación del esfuerzo externo y la detección del mismo más allá del tiempo necesario para efectuar un ciclo de operación del algoritmo, el cual dependerá de la frecuencia con la que se implemente el mismo. \par 
+
+\item Debido a la elección del estimador empleado, los valores obtenidos directamente por el algoritmo presentan una componente de ruido proveniente del existente en las medidas de los sensores, por lo que es preciso efectuar un filtrado para eliminar o reducir el impacto del ruido en las estimaciones. \par 
+
+\item En ciertas simulaciones aparecen ciertos picos de naturaleza incierta, cuyo origen debe ser causado por el motor físico de \emph{Gazebo}, pero igualmente ha de ser considerado, puesto que es probable la existencia de valores anómalos en las medidas de los sensores, y estos resultados muestran la poca robustez existente ante tales medidas erróneas. Dentro del futuro trabajo se considera la inclusión de procesos encaminados a reducir el impacto de estas medidas erróneas. \par 
+
+\end{itemize}
+
+Por otro lado, es preciso realizar unas consideraciones acerca de la viabilidad de una implantación en tiempo real del observador propuesto. Debido a la gran carga de trabajo que supone la ejecución del algoritmo estimador, se precisaría un dispositivo independiente encargado de la ejecución del mismo, puesto que, como se mostró en la descripción de los equipos que componen el sistema de trabajo, el resto de dispositivos de control presentan demasiada carga de trabajo como para para poder abarcar con los mismos recursos la ejecución del algoritmo. \par 
+
+La afirmación anterior acerca de la gran carga de trabajo que supone la implantación a tiempo real del algoritmo se basa el hecho de que las ecuaciones planteadas del sistema son de orden elevado, en la que deben invertirse matrices de dimensión 22 o 13. De igual manera debería verificarse a qué frecuencia puede ejecutarse el algoritmo con un dispositivo de control determinado, para poder garantizar el mínimo retardo necesario para el control bilateral del sistema. \par 
+
+Los resultados obtenidos entran dentro de los comportamientos esperables para el observador, que sin ser perfectos (situaciones en las que la aceleración es superior a \emph{g}, poca robustez ante valores anómalos), podría ser empleado en gran variedad de aplicaciones robóticas. \par 
+
+Por último, es preciso remarcar que se ha conseguido cumplir todos los objetivos marcados para la realización del trabajo mostrados al inicio del texto. De esta manera se mostrará en la próxima sección las líneas futuras a realizar tras la elaboración del presente trabajo. \par 
+
+Los distintos objetivos marcados al inicio del trabajo pueden mostrarse a continuación junto con una breve explicación acerca del cumplimiento del mismo:
+
+\begin{itemize}
+
+\item \textbf{Objetivo 1}: Elegir aquellos dispositivos necesarios para obtener información acerca del estado del sistema y de los esfuerzos aplicados sobre el mismo. La correcta elección de sensores es vital para la identificación de esfuerzos. \par 
+
+El principal sensor escogido para efectuar la compensación dinámica de las fuerzas medidas por el sensor fuerza-par ha sido el sensor inercial o \acrshort{imu}, gracias al cual se puede obtener información acerca del movimiento y estado del sistema. \par 
+
+\item \textbf{Objetivo 2}: Desarrollar un algoritmo capaz de identificar las fuerzas y momentos externos aplicados al elemento terminal del sistema robótico, debiendo ser éste capaz de suprimir aquellas componentes causadas por la aceleración de la gravedad y la inercia. \par 
+
+El algoritmo propuesto se fundamenta en el uso de un observador del estado basado en un \emph{Filtro de Kalman Extendido} en el cual no se han considerado las fuerzas externas. De esta manera puede compararse la estimación del estado y la salida del sistema con los valores reales para poder conocer así las fuerzas externas aplicadas al mismo, sin componentes debidas a la aceleración ni a la inercia. \par 
+
+\item \textbf{Objetivo 3}: Conseguir la mayor independencia posible de los elementos empleados para la identificación de fuerzas externas con respecto al resto de elementos que forman el sistema teleoperado, con el fin de facilitar la coexistencia e integración con los distintos dispositivos y elementos de control del sistema. \par 
+
+El sistema estimador es completamente independiente del resto de componentes del sistema puesto que únicamente hace uso de ciertos parámetros físicos como masa o inercia, y no comparte recursos con otros sistemas de control. \par 
+
+\item \textbf{Objetivo 4}: Analizar la validez y efectividad mostrada por el algoritmo propuesto ante distintas situaciones del sistema. \par 
+
+Los experimentos efectuados se han escogido para abarcar la mayor variedad posible de situaciones a las que puede enfrentarse el algoritmo, como puede ser la ejecución de diversos movimientos y la aplicación de distintas fuerzas y momentos al elemento terminal. Los resultados pueden consultarse en el capítulo anterior. \par 
+
+\item \textbf{Objetivo 5}: Analizar la viabilidad de la implantación práctica del algoritmo en situaciones reales. \par 
+
+Debido a la rápida respuesta del estimador, si se dispone de dispositivos de control suficientemente potentes y sensores suficientemente rápidos puede efectuarse una ejecución del algoritmo en tiempo real. \par 
+
+\end{itemize}
+
+Tras esta revisión de los objetivos marcados, se procede, a continuación, a mostrar distintos trabajos realizables tras los resultados obtenidos en el presente desarrollo. \par 
+
+
+\section{Trabajos futuros}
+
+A pesar de que el trabajo realizado ha alcanzado los objetivos marcados para el mismo, su alcance podría ser ampliado y extendido en un futuro. Sin ser un problema de aparición nueva, no existe una alternativa única para la medición y estimación de las fuerzas externas en un sistema teleoperado, debido a la enorme diversidad de estructuras y configuraciones empleadas en el sistema robotizado. Se considera que la idea planteada presenta futuro y por eso se podría, a lo largo de los años venideros, ampliar y expandir la línea de trabajo marcada por este texto. \par 
+
+Los trabajos a realizar en un futuro cercano pueden resumirse en los puntos que se muestran a continuación:
+
+\begin{enumerate}
+
+\item Implantación del algoritmo en un sistema real. Debido a que únicamente se ha sido en efectuado experimentos del algoritmo en un sistema simulado, es lógico, una vez obtenidos los resultados satisfactorios, plantear una prueba del observador en el sistema real. \par 
+
+\item Desarrollo de un algoritmo para obtener orientación a partir de las medidas del sensor inercial. Esto es imprescindible para poder implantar posteriormente el algoritmo propuesto en este trabajo. \par 
+
+\item Combinar los resultados del observador con la información proveniente de unos sensores de presión existentes en los dedos de la mano robótica. El objetivo sería aunar todas las fuentes de información para obtener una estimación más exacta de la interacción con el entorno y reducir posibles redundancias existentes en las medidas de los distintos sensores. \par 
+
+\item Incluir un procesamiento de las estimaciones producidas por el observador para aumentar la robustez y fiabilidad del mismo. Además del filtro para eliminar el ruido en las estimaciones puede incluirse uno que reduzca el impacto de las medidas erróneas mencionadas con anterioridad. \par 
+
+\item A pesar de encontrarse el algoritmo propuesto enfocado a sistemas teleoperados, en los que se pretende realizar una reflexión de fuerzas hacia un operador humano, puede plantearse la opción de introducir dicho algoritmo en sistemas robotizados que no precisen de intervención humana directamente para conocer con mayor precisión la fuerza aplicada al entorno. \par 
+
+\end{enumerate}
+
+Estos puntos son los principales objetivos marcados para futuros trabajos a realizar con el fin de mejorar el desarrollo marcado en el presente \acrfull{tfg}. \par 

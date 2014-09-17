@@ -1,0 +1,176 @@
+\documentclass[a4paper,11pt,twoside,titlepage]{book}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-tabla]{babel}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage[titletoc,toc,page]{appendix}
+\usepackage{listings}
+\usepackage{subfigure}
+\usepackage{color}
+\usepackage{cite}
+\usepackage{url}
+\usepackage[T1]{fontenc} % Permite cursivas en titulos
+\usepackage[official]{eurosym} % Simbolo de Euro
+\usepackage{lscape} % Permite que aparezca cierta seccion en apaisado
+\usepackage[font=small]{caption} % Letra de pie de foto de menor tamaño
+\usepackage{titlesec} % Modifica el inicio del capitulo
+\usepackage{setspace}
+\usepackage{pdflscape}
+\usepackage[]{mcode}
+\usepackage{rotating,booktabs}
+\usepackage{multirow} 
+
+
+
+
+\newcommand*{\fancychapterstyle}{%
+  \titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries}{\chaptertitlename\ \thechapter}{20pt}{\Huge}
+  \titlespacing*{\chapter}{0pt}{200pt}{40pt}
+}
+\newcommand*{\standardchapterstyle}{%
+  \titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries}{\chaptertitlename\ \thechapter}{20pt}{\Huge}
+  \titlespacing*{\chapter}{0pt}{50pt}{40pt}
+}
+
+\usepackage[a4paper,top=25mm,bottom=45mm,left=25mm,right=25mm]{geometry}
+
+% Edita cabecero y pie de pagina
+\usepackage{fancyhdr}
+\setlength{\headheight}{15mm}
+\setlength{\footskip}{15mm}
+\pagestyle{fancyplain}
+
+%\fancyhf{}
+\fancyfoot[LE]{\thepage}
+\fancyfoot[RO]{\thepage}
+\renewcommand{\headrulewidth}{1.5pt}
+\renewcommand{\footrulewidth}{1.5pt}
+
+% hyperref should be loaded as the last package
+\usepackage{hyperref}
+\hypersetup{pdftex,colorlinks=true,allcolors=blue}
+\usepackage{hypcap}
+
+\usepackage[nomain,acronym]{glossaries}
+\makeglossaries
+\input{INP-00-glossary}
+
+\renewcommand*{\familydefault}{\sfdefault}
+\allowdisplaybreaks
+
+% Modifica espacio entre párrafos
+\setlength{\parindent}{0.75cm}
+\setlength{\parskip}{0.5cm plus4mm minus3mm}
+
+% Modifica los espacios existentes alrededor de las ecuaciones
+\expandafter\def\expandafter\normalsize\expandafter{%
+    \normalsize
+    \setlength\abovedisplayskip{4pt}
+    \setlength\belowdisplayskip{6pt}
+    \setlength\abovedisplayshortskip{4pt}
+    \setlength\belowdisplayshortskip{6pt}
+}
+
+% Define estilo para fragmentos de codigo de matlab
+\definecolor{mygreen}{RGB}{28,172,0} % color values Red, Green, Blue
+\definecolor{mylilas}{RGB}{170,55,241}
+\lstset{language=Matlab,%
+    %basicstyle=\color{red},
+    linewidth=15.5cm,%
+    breaklines=true,%
+    morekeywords={matlab2tikz},
+    keywordstyle=\color{blue},%
+    morekeywords=[2]{1}, keywordstyle=[2]{\color{black}},
+    identifierstyle=\color{black},%
+    stringstyle=\color{mylilas},
+    commentstyle=\color{mygreen},%
+    showstringspaces=false,%without this there will be a symbol instead of spaces
+    numbers=left,%
+    numberstyle={\tiny \color{black}},% size of the numbers
+    numbersep=9pt, % this defines how far the numbers are from the text
+    emph=[1]{for,end,break},emphstyle=[1]\color{red}, %some words to emphasise
+    %emph=[2]{word1,word2}, emphstyle=[2]{style},    
+}
+
+\begin{document}
+
+\frontmatter
+\standardchapterstyle
+\include{1Portada}
+\include{2Agradecimientos}
+\include{3Resumen}
+
+\fancyhead[LE]{\MakeUppercase{\leftmark}}
+\fancyhead[RO]{\textsc{ESTUDIO DE FUERZAS EXTERNAS PARA MANOS ROBÓTICAS}}
+\fancyfoot[RE]{\textsc{Escuela Técnica Superior de Ingenieros Industriales}}
+\fancyfoot[LO]{\textsc{Guzmán Borque Gallego}}
+
+\tableofcontents
+
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{Índice de figuras}
+\listoffigures
+
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{Índice de tablas}
+\listoftables
+
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{Acrónimos y abreviaturas}
+\printglossary[title=Acrónimos y abreviaturas,toctitle=Acrónimos y Abreviaturas]
+
+\mainmatter
+\fancychapterstyle
+
+
+\include{3Introduccion}
+\include{4EstadoDelArte}
+\include{5PlataformaDeTeleoperacion}
+\include{6ReflexionDeFuerzas}
+\include{arquitecturas}
+\include{7AlgoritmosDeCotrol}
+%\include{8PruebasYResultados}
+\include{Planificacion}
+
+\include{4Introduccion}
+\include{5EstadoDelArte}
+\include{6FiltroKalman}
+\include{7SetupTrabajo}
+\include{8DisenoObservador}
+\include{9ImplementacionResultados}
+\include{10Concl-TrabFuturos}
+
+
+
+
+
+
+
+\appendix
+\standardchapterstyle
+\include{App1-PlanificacionPresupuesto}
+\include{App2-DemoA1}
+\include{App3-CodigoObservab}
+\include{App4-CodigoObservador}
+\include{App5-DataEditor}
+
+\backmatter
+\fancyhf{}
+\fancyfoot[LE]{\thepage}
+\fancyfoot[RO]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{Bibliografía}
+\bibliographystyle{IEEEtran}
+\bibliography{E1-Bibliografia}
+
+\end{document}

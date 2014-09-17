@@ -1,0 +1,673 @@
+\chapter{Introducción al Filtro de Kalman}
+
+Debido a la gran importancia que presenta el \emph{Filtro de Kalman} en el desarrollo del presente trabajo, se ha visto conveniente efectuar un desarrollo matemático de este algoritmo ideado por Rudolph E. Kalman. Se comenzará con la formulación de estimaciones de mínimos cuadrados, aspecto en el que se basa este algoritmo. Posteriormente se analizará la propagación de distintos fenómenos estadísticos a lo largo del tiempo en función de las ecuaciones del sistema en el \emph{modelo en el espacio de estado} y se finalizará con la formulación del \emph{Filtro de Kalman} y el algoritmo derivado del mismo, para sistemas no lineales, el \emph{Filtro de Kalman Extendido}. \par 
+
+Aquellos conocedores de dichos algoritmos pueden continuar la lectura del trabajo por el próximo capítulo, en el que se describe el sistema empleado para ensayar y probar la aplicación del algoritmo propuesto. \par 
+
+\newpage
+\section{Estimación de mínimos cuadrados.}
+
+Se realizará, para mayor claridad, un desarrollo desde lo más simple a lo más complejo, como se ha efectuado en \cite{simon2006optimal}, puesto que de esta manera puede entenderse en mayor medida el fundamento teórico de la minimización de errores propia del \emph{Filtro de Kalman} o \acrshort{kf}. \par 
+
+\subsection{Estimación de un vector de constantes.}
+\noindent
+En primer lugar supongamos un sistema como el que se muestra a continuación:
+
+\begin{equation}
+\begin{split}
+	\begin{pmatrix}	y_1 \\ \vdots \\ y_k \end{pmatrix} &=
+	\begin{pmatrix}	H_{1,1} & \ldots & H_{1,n} \\ 
+					\vdots &  & \vdots \\ 
+					H_{k,1} & \ldots & H_{k,n}
+	\end{pmatrix} \begin{pmatrix}	x_1 \\ \vdots \\ x_n \end{pmatrix} 
+	+ \begin{pmatrix}	v_1 \\ \vdots \\ v_k \end{pmatrix}\\
+	\boldsymbol{y} &= H\boldsymbol{x} + \boldsymbol{v} \\
+\end{split}
+\label{eq:sist1}
+\end{equation}
+
+\noindent
+donde $ \boldsymbol{x} $ representa un vector de constantes del que se desea obtener su valor, $ \boldsymbol{y} $ las medidas de un sensor cuyo valor es combinación lineal de los valores de las constantes a medir, y $ \boldsymbol{v} $ el ruido inherente a las medidas del sensor. \par 
+
+Se define ahora la función error $ \boldsymbol{\epsilon}_y $, la cual se define como el error entre las medidas ruidosas del sensor y el vector $ H\boldsymbol{\hat{x}} $, donde $\boldsymbol{\hat{x}}$ representa la estimación de los valores del vector $\boldsymbol{x}$:
+
+\[ \boldsymbol{\epsilon}_y = \boldsymbol{y} - H\boldsymbol{\hat{x}} \]
+
+El valor más probable del vector $ \boldsymbol{x} $ es aquel que minimiza la suma de los cuadrados de la función error definida anteriormente. Por lo que se tratará de minimizar la función de coste $ J $ definida como:
+
+\[ J = \epsilon_{y,1}^2 + \epsilon_{y,2}^2 + \ldots + \epsilon_{y,k}^2 = \boldsymbol{\epsilon}_y^T \boldsymbol{\epsilon}_y\]
+
+Sustituyendo en esta última expresión el valor de $ \boldsymbol{\epsilon}_y $ se tiene:
+
+\begin{equation}
+\begin{split}
+	J &= (\boldsymbol{y} - H\boldsymbol{\hat{x}})^T (\boldsymbol{y} - H\boldsymbol{\hat{x}}) = \\
+	&= \boldsymbol{y}^T \boldsymbol{y} - \boldsymbol{\hat{x}}^T H^T \boldsymbol{y} - \boldsymbol{y}^T H\boldsymbol{\hat{x}} + \boldsymbol{\hat{x}}^T H^T H\boldsymbol{\hat{x}}
+\end{split}
+\end{equation}
+
+Para minimizar esta expresión es preciso derivar con respecto a $ \boldsymbol{\hat{x}} $ e igualar a cero, y tras despejar puede obtenerse así la estimación óptima de $ \boldsymbol{x} $:
+
+\begin{equation}
+\begin{split}
+	\frac{\partial J}{\partial \boldsymbol{\hat{x}}} &= -2 \boldsymbol{y}^T H + 2 \boldsymbol{\hat{x}}^T H^T H = 0 \\
+	H^T\boldsymbol{y} &= H^T H \boldsymbol{\hat{x}} \\
+	\boldsymbol{\hat{x}} &= (H^T H)^{-1}H^T\boldsymbol{y} \\
+	\boldsymbol{\hat{x}} &= H^{+}\boldsymbol{y}
+\end{split}
+\end{equation}
+
+\noindent
+donde $ H^{+} $ es la matriz pseudoinversa de $ H $, en el caso más común en el que la matriz $H$ no sea cuadrada. \par 
+
+\subsection{Estimación de mínimos cuadrados ponderada}
+
+Supóngase ahora la presencia de distintos tipos de sensores, entre los cuales existen algunos con mayor precisión que otros, por lo que la estimación producida por dicho sensor ha de ser más correcta, o cercana al valor real que el del resto. \par 
+
+Ante esta situación se modifica la estimación enunciada en el apartado anterior, incluyendo una ponderación de los valores estimados por cada sensor. Considérese el mismo sistema de la expresión (\ref{eq:sist1}), incluyéndose la covarianza de las medidas de cada sensor:
+
+\[
+	E[v v^T] = R = \begin{pmatrix}
+		\sigma_1^2 & \ldots & 0 \\
+		\vdots &  & \vdots \\
+		0 & \ldots & \sigma_k^2
+	\end{pmatrix} 
+\]
+\noindent
+suponiendo la media del ruido nula. Se modifica la función de coste $J$ de la siguiente manera:
+
+\begin{equation}
+J = \frac{\epsilon_{y,1}^2}{\sigma_1^2} + \frac{\epsilon_{y,2}^2}{\sigma_2^2} + \ldots + \frac{\epsilon_{y,k}^2}{\sigma_k^2} = \boldsymbol{\epsilon}_y^T R^{-1} \boldsymbol{\epsilon}_y
+\label{eq:ponderacion}
+\end{equation}
+
+\noindent
+Efectuando las mismas operaciones que en el anterior apartado se obtiene: 
+
+\begin{equation}
+\begin{split}
+	J &= (\boldsymbol{y} - H\boldsymbol{\hat{x}})^T R^{-1} (\boldsymbol{y} - H\boldsymbol{\hat{x}}) = \\
+	&= \boldsymbol{y}^T R^{-1} \boldsymbol{y} - \boldsymbol{\hat{x}}^T H^T R^{-1} \boldsymbol{y} - \boldsymbol{y}^T R^{-1} H\boldsymbol{\hat{x}} + \boldsymbol{\hat{x}}^T H^T R^{-1} H\boldsymbol{\hat{x}}
+\end{split}
+\end{equation}
+
+\noindent
+Calculando el mínimo de la expresión anterior se tiene:
+
+\begin{equation}
+\begin{split}
+	\frac{\partial J}{\partial \boldsymbol{\hat{x}}} &= -2 \boldsymbol{y}^T R^{-1} H + 2 \boldsymbol{\hat{x}}^T H^T R^{-1} H = 0 \\
+	H^T R^{-1} \boldsymbol{y} &= H^T R^{-1} H \boldsymbol{\hat{x}} \\
+	\boldsymbol{\hat{x}} &= (H^T R^{-1} H)^{-1} H^T R^{-1} \boldsymbol{y}
+\end{split}
+\label{eq:estponderado}
+\end{equation}
+
+Obsérvese que para poder computar esta última expresión es preciso que la matriz de covarianzas $R$ sea no singular, es decir, que todas las medidas presenten cierto ruido, de esta manera sí sería invertible. \par 
+
+Estas situaciones descritas suponen poseer todas las medidas del sensor en el momento de operación, lo cual es inviable para sistemas de control en tiempo real. Para ello se presenta a continuación la aplicación recursiva de dicha estimación óptima. \par 
+
+\subsection{Estimación de mínimos cuadrados recursiva}
+
+En casos en los que se efectúa un control en tiempo real, cada cierto periodo de tiempo nuevas medidas de los sensores son obtenidas, lo que supondría incluir la nueva medida en la expresión (\ref{eq:sist1}), y calcular de nuevo la estimación óptima. \par 
+
+Este procedimiento, a medida que aumentan el número de medidas se vuelve imposible de implantar a tiempo real debido al aumento del orden a cada periodo de muestreo. Por esta razón se propone un modelo recursivo para la obtención de las estimaciones que no precise recalcular completamente la ecuación (\ref{eq:estponderado}). Un estimador lineal recursivo puede formularse de la forma: 
+
+\begin{equation}
+\begin{split}
+	\boldsymbol{y}_k &= H_k\boldsymbol{x} + \boldsymbol{v}_k \\
+	\boldsymbol{\hat{x}}_k &= \boldsymbol{\hat{x}}_{k-1} + K_k(\boldsymbol{y}_k - H_k\boldsymbol{\hat{x}}_{k-1})
+\end{split}
+\label{eq:sist2}
+\end{equation}
+
+De esta manera se puede calcular la nueva estimación $\boldsymbol{\hat{x}}_k$ en función de la estimación previamente efectuada en el instante anterior $\boldsymbol{\hat{x}}_{k-1}$ y la nueva medición de los sensores $\boldsymbol{y}_k$, donde $k = 1,2 \ldots$ representa el instante de tiempo de manera que $t = kT_s$ (con periodo de muestreo $T_s$), $K_k$ es la denominada matriz de ganancias del estimador. \par 
+
+Idealmente, la estimación efectuada debe ser lo más cercana al valor real como sea posible, para ello se ha de analizar la media del error producido: 
+
+\[
+\begin{split}
+	E[\boldsymbol{\epsilon}_{x,k}] 
+	&= E[\boldsymbol{x} - \boldsymbol{\hat{x}}_k] = \\
+	&= E[\boldsymbol{x} - \boldsymbol{\hat{x}}_{k-1} - K_k(\boldsymbol{y}_k - H_k\boldsymbol{\hat{x}}_{k-1})] = \\
+	&= E[\boldsymbol{\epsilon}_{x,k-1} - K_k(H_k\boldsymbol{x} + \boldsymbol{v}_k - H_k\boldsymbol{\hat{x}}_{k-1})] = \\
+	&= E[\boldsymbol{\epsilon}_{x,k-1} - K_kH_k\boldsymbol{\epsilon}_{x,k-1} + K_k\boldsymbol{v}_k] = \\
+	&= (I - K_kH_k)E[\boldsymbol{\epsilon}_{x,k-1}] - K_kE[\boldsymbol{v}_k]
+\end{split}
+\] \\
+\noindent
+de esta manera, si el ruido presenta media nula, y la estimación previa es igual al valor real, la nueva estimación tendrá igualmente como esperanza el valor real a estimar, por tanto, si la estimación inicial para $k=1$ es correcta, todas las estimaciones posteriores presentarán como media el valor real a estimar, independiente de la matriz de ganancias $K_k$ escogida. \par
+
+Es preciso ahora efectuar la elección de la matriz de ganancias del estimador óptima. Como criterio establecido para afirmar que el estimador es óptimo, se toma la minimización del error producido en las estimaciones, representado mediante la función de coste $J_k$ para el instante $k$: 
+
+\begin{equation}
+\begin{split}
+	J_k &= E[(x_1 - \hat{x}_{1,k})^2] + \ldots + E[(x_n - \hat{x}_{n,k})^2] = \\
+	&= E[\epsilon_{1,k}^2 + \ldots + \epsilon_{n,k}^2] = \\
+	&= E[\boldsymbol{\epsilon}_{x,k}^T \boldsymbol{\epsilon}_{x,k}] = \\
+	&= E[Tr(\boldsymbol{\epsilon}_{x,k} \boldsymbol{\epsilon}_{x,k}^T)] = \\
+	&= Tr(P_k)
+\end{split}
+\label{eq:funcioncoste}
+\end{equation} \\
+\noindent
+donde $P_k$ es la matriz de covarianzas del error en las estimaciones, $P_k = E[\boldsymbol{\epsilon}_{x,k} \boldsymbol{\epsilon}_{x,k}^T]$. Siguiendo un procedimiento similar al efectuado para calcular el error en la estimación se obtiene:
+
+\[
+\begin{split}
+	P_k &= E[\boldsymbol{\epsilon}_{x,k} \boldsymbol{\epsilon}_{x,k}^T] = \\
+	&= E\{[(I - K_kH_k)\boldsymbol{\epsilon}_{x,k-1} - K_k\boldsymbol{v}_k] [(I - K_kH_k)\boldsymbol{\epsilon}_{x,k-1} - K_k\boldsymbol{v}_k]^T\} = \\
+	&= (I - K_kH_k)E[\boldsymbol{\epsilon}_{x,k-1} \boldsymbol{\epsilon}_{x,k-1}^T](I - K_kH_k)^T - \\
+	&- K_kE[\boldsymbol{v}_k\boldsymbol{\epsilon}_{x,k-1}^T](I - K_kH_k)^T - (I - K_kH_k)E[\boldsymbol{\epsilon}_{x,k-1} \boldsymbol{v}_k^T]K_k^T + \\
+	&+ K_kE[\boldsymbol{v}_k\boldsymbol{v}_k^T] K_k^T
+\end{split}
+\]
+
+Siendo independientes el error en la estimación en el instante anterior, $\boldsymbol{\epsilon}_{x,k-1}$, y el ruido en la medida actual $\boldsymbol{v}_k$, $E[\boldsymbol{v}_k\boldsymbol{\epsilon}_{x,k-1}^T] = 0$, debido a que el valor esperado de ambas variables es nulo, por lo que la expresión anterior puede reducirse de la forma:
+
+\begin{equation}
+	P_k = (I - K_kH_k)P_{k-1}(I - K_kH_k)^T + K_k R_k K_k^T
+\label{eq:ecuacionP}
+\end{equation}
+
+Resta únicamente el cálculo de la matriz $K_k$ que haga mínimo el valor de la expresión (\ref{eq:funcioncoste}). Para ello se realizan las siguientes operaciones:
+
+\begin{equation}
+\begin{split}
+	\frac{\partial J_k}{\partial K_k} &= -2(I - K_kH_k)P_{k-1}H_k^T + 2K_kR_k = 0 \\
+	K_kR_k &= (I - K_kH_k)P_{k-1}H_k^T \\
+	K_k(H_kP_{k-1}H_k^T + R_k) &= P_{k-1}H_k^T \\
+	K_k &= P_{k-1}H_k^T(H_kP_{k-1}H_k^T + R_k)^{-1}
+\end{split}
+\label{eq:ecuacionK}
+\end{equation}
+
+Para poder implementar este procedimiento, es preciso efectuar una estimación inicial, tanto del valor del estado, como de la matriz de covarianzas del error en las estimaciones: 
+
+\[
+\begin{split}
+	\boldsymbol{\hat{x}}_0 &= E[\boldsymbol{x}] \\
+	P_0 &= E[(\boldsymbol{x}-\boldsymbol{\hat{x}}_0) (\boldsymbol{x}-\boldsymbol{\hat{x}}_0)^T]
+\end{split}
+\]
+
+De esta manera se dispone de todos los elementos para poder implementar la estimación de mínimos cuadrados recursiva. \par 
+
+\section{Evolución de estados y covarianzas}
+
+Puesto que en la mayoría de las aplicaciones, los valores a estimar no son constantes, sino que siguen una serie de ecuaciones físicas, es preciso analizar cómo afecta esta evolución temporal a las expresiones anteriormente calculadas, haciendo uso del ya mencionado \emph{modelo del espacio de estado}. \par 
+
+En la práctica, los sistemas analizados pueden clasificarse en 3 tipos, según su naturaleza: sistemas discretos, sistemas muestreados y sistemas continuos. Se mostrará a continuación cómo afecta en cada caso la presencia de una dinámica en el sistema.
+
+\subsubsection{Sistemas discretos}
+\noindent
+Supóngase el siguiente sistema discreto lineal:
+
+\begin{equation}
+	\boldsymbol{x}_k = F_{k-1}\boldsymbol{x}_{k-1} + B_{k-1}\boldsymbol{u}_{k-1} + \boldsymbol{w}_{k-1}
+\end{equation} \\
+\noindent
+donde $\boldsymbol{u}_k$ es una entrada del sistema conocida, y $\boldsymbol{w}_k$ es ruido gaussiano de media nula y covarianza $Q_k$. La esperanza del vector de estado $\boldsymbol{x}$ evoluciona a lo largo del tiempo siguiendo la expresión: 
+
+\begin{equation}
+\begin{split}
+	\boldsymbol{\bar{x}}_k &= E[\boldsymbol{x}_k] = \\
+	&= F_{k-1}\boldsymbol{\bar{x}}_{k-1} + B_{k-1}\boldsymbol{\bar{u}}_{k-1}
+\end{split}
+\end{equation} \\
+\noindent
+y la covarianza del vector de estado evoluciona de la forma:
+
+\begin{equation}
+\begin{split}
+	(\boldsymbol{x}_k - \boldsymbol{\bar{x}}_k)(\boldsymbol{x}_k - \boldsymbol{\bar{x}}_k)^T &= [F_{k-1}(\boldsymbol{x}_{k-1} - \boldsymbol{\bar{x}}_{k-1}) + \boldsymbol{w}_{k-1}] [F_{k-1}(\boldsymbol{x}_{k-1} - \boldsymbol{\bar{x}}_{k-1}) + \boldsymbol{w}_{k-1}]^T = \\
+	&= F_{k-1}(\boldsymbol{x}_{k-1} - \boldsymbol{\bar{x}}_{k-1})(\boldsymbol{x}_{k-1} - \boldsymbol{\bar{x}}_{k-1})^TF_{k-1}^T + \boldsymbol{w}_{k-1}\boldsymbol{w}_{k-1}^T + \\
+	&+ F_{k-1}(\boldsymbol{x}_{k-1} - \boldsymbol{\bar{x}}_{k-1})\boldsymbol{w}_{k-1}^T + \boldsymbol{w}_{k-1}(\boldsymbol{x}_{k-1} - \boldsymbol{\bar{x}}_{k-1})^TF_{k-1}^T
+\end{split}
+\end{equation} \\
+\noindent
+cuya esperanza, debido a la independencia entre $(\boldsymbol{x}_k - \boldsymbol{\bar{x}}_k)$ y $\boldsymbol{w}_{k-1}$, resulta:
+
+\begin{equation}
+\begin{split}
+	P_k &= E[(\boldsymbol{x}_k - \boldsymbol{\bar{x}}_k)(\boldsymbol{x}_k - \boldsymbol{\bar{x}}_k)^T] = \\
+	&= F_{k-1}P_{k-1}F_{k-1}^T + Q_{k-1}
+\end{split}
+\end{equation}
+
+De esta manera puede conocerse la propagación de covarianzas y estados en una evolución temporal del sistema, aspecto de vital importancia, como se verá más tarde, en la implantación de un Filtro de Kalman. \par 
+
+\subsection{Sistemas muestreados}
+
+En la mayor parte de los casos prácticos de ingeniería, la evolución dinámica del sistema se encuentra modelada por ecuaciones físicas diferenciales, y por tanto continuas, empleándose para su control y medición elementos electrónicos para su muestreo, lo que supone que únicamente se conoce su estado en instantes discretos del tiempo. \par 
+
+\noindent
+Supóngase el siguiente sistema continuo lineal e invariante:
+
+\begin{equation}
+	\boldsymbol{\dot{x}}(t) = A\boldsymbol{x}(t) + B\boldsymbol{u}(t) + \boldsymbol{w}(t)
+\label{eq:eqcontinuo}
+\end{equation} \\
+\noindent
+donde $\boldsymbol{u}(t)$ es una entrada conocida y $\boldsymbol{w}(t)$ una variable aleatoria que representa ruido blanco de covarianza 
+
+\[ E[\boldsymbol{w}(t)\boldsymbol{w}(\tau)^T] = Q_c\delta(t-\tau) \]
+
+Siguiendo el procedimiento realizado para sistemas discretos, el cual puede consultarse en \cite{simon2006optimal} si se desea el desarrollo completo, se calcula la evolución temporal del valor esperado del vector de estado:
+
+\begin{equation}
+	\boldsymbol{\bar{x}}_k = F_{k-1}\boldsymbol{\bar{x}}_{k-1} + G_{k-1}\boldsymbol{u}_{k-1}
+\end{equation}
+\noindent
+y su covarianza:
+
+\begin{equation}
+	P_k = F_{k-1}P_{k-1}F_{k-1}^T + Q_{k-1}
+\end{equation} \\
+\noindent
+donde se han efectuado las siguientes definiciones: 
+
+\begin{equation}
+\begin{split}
+	F_k &= e^{A\delta t)} \\
+	G_k &= \int_{t_k}^{t_{k+1}} e^{A(t_{k+1} - \tau)}B(\tau)d\tau 
+\end{split}
+\end{equation}
+
+\subsection{Sistemas continuos}
+
+Para sistemas continuos se presenta el mismo sistema mostrado en el caso anterior, cuya evolución se encuentra representada por el modelo de la expresión (\ref{eq:eqcontinuo}). Siguiendo el procedimiento marcado en los anteriores apartados, se obtienen las ecuaciones que rigen la evolución temporal de la esperanza del vector de estado del sistema:
+
+\begin{equation}
+	\boldsymbol{\dot{\bar{x}}}(t) = A\boldsymbol{\bar{x}}(t) + B\boldsymbol{u}(t)
+\end{equation} \\
+\noindent
+y de la covarianza del vector de estado: 
+
+\begin{equation}
+	\dot{P}(t) = AP(t) + P(t)A^T + Q_c
+\end{equation}
+
+Habiendo descrito cómo evoluciona a lo largo del tiempo un sistema y su estimación, puede procederse a la formulación del denominado \emph{Filtro de Kalman}. \par 
+
+\section{Filtro de Kalman}
+
+EL \emph{Filtro de Kalman} consigue aunar los conceptos descritos en los recientes apartados (evolución temporal de covarianzas y medias, así como la estimación óptima del estado del sistema) lo que lo convierte en un estimador óptimo del estado, debiéndose cumplir ciertas condiciones que se mostrarán a continuación. \par 
+
+Es preciso efectuar una serie de definiciones acerca de la nomenclatura empleada en el \emph{Filtro de Kalman} y en los capítulos centrales en los que se desarrolla el algoritmo estimador propuesto en este texto. \par 
+
+Como se ha realizado con anterioridad, el uso del subíndice $k$ denota el instante de tiempo al que hace referencia la variable a la que acompaña, en general $t_k = k T_s$, siendo $T_s$ el periodo de muestreo empleado. \par 
+
+Es preciso diferenciar, como se verá a continuación, entre aquellas estimaciones efectuadas \emph{a priori} (antes de conocer las medidas de los sensores), denotadas con el superíndice $^-$, y las efectuadas \emph{a posteriori} (tras conocer las medidas de los sensores), indicadas con el superíndice $^+$. \par 
+
+A continuación se muestra el algoritmo del \emph{Filtro de Kalman} particularizado para los distintos tipos de sistemas mostrados anteriormente. Para evitar excesivos desarrollos que alejarían la atención acerca del objetivo principal del apartado, la exposición del \emph{Filtro de Kalman}, se ahorrarán demostraciones efectuadas para deducir las expresiones mostradas. Si se desea consultar estos desarrollos puede hacerse en \cite{simon2006optimal}. \par 
+
+\subsection{Filtro de Kalman discreto}
+
+En este modelo se considera un sistema discreto lineal e invariante. El algoritmo del \emph{Filtro de Kalman discreto} se muestra a continuación:
+
+\begin{enumerate}
+
+\item El sistema se encuentra representado, tanto su dinámica como la salida de sus sensores, mediante las expresiones:
+
+\begin{equation}
+\begin{split}
+	\boldsymbol{x}_k &= F_{k-1}\boldsymbol{x}_{k-1} + G_{k-1}\boldsymbol{u}_{k-1} + \boldsymbol{w}_{k-1} \\
+	\boldsymbol{y}_k &= H_k\boldsymbol{x}_k + L_k\boldsymbol{u}_k + \boldsymbol{v}_k \\
+	E[\boldsymbol{w}_k\boldsymbol{w}_j^T] &= Q_k \delta_{k-j} \quad E[\boldsymbol{w}_k] = 0 \\
+	E[\boldsymbol{v}_k\boldsymbol{v}_j^T] &= R_k \delta_{k-j} \quad E[\boldsymbol{v}_k] = 0 \\
+	E[\boldsymbol{w}_k\boldsymbol{v}_j^T] &= 0
+\end{split}
+\end{equation}
+
+\item Inicialización del \emph{Filtro de Kalman}:
+
+\begin{equation}
+\begin{split}
+	\boldsymbol{\hat{x}}_0^{+} &= E[\boldsymbol{x}_0] \\
+	P_0^{+} &= E[(\boldsymbol{x}_0 - \boldsymbol{\hat{x}}_0^{+}) (\boldsymbol{x}_0 - \boldsymbol{\hat{x}}_0^{+})^T]
+\end{split}
+\end{equation}
+
+\item Estimación \emph{a priori} del estado y de la matriz de covarianzas, para $k = 1,2, \ldots$ : 
+
+\begin{equation}
+\begin{split}
+	P_k^{-} &= F_{k-1}P_{k-1}^{+}F_{k-1}^T + Q_{k-1} \\
+	\boldsymbol{\hat{x}}_k^{-} &= F_{k-1}\boldsymbol{\hat{x}}_{k-1}^{+} + G_{k-1}\boldsymbol{u}_{k-1}
+\end{split}
+\end{equation}
+
+\item Cálculo de la matriz de ganancias del \emph{Filtro de Kalman}:
+
+\begin{equation}
+	K_k = P_k^{-}H_k^T(H_kP_k^{-}H_k^T + R_k)^{-1}
+\end{equation}
+
+\item Actualización y estimación \emph{a posteriori} del estado del sistema y de la matriz de covarianzas:
+
+\begin{equation}
+\begin{split}
+	\boldsymbol{\hat{x}}_k^{+} &= \boldsymbol{\hat{x}}_k^{-} + K_k(\boldsymbol{y}_k - _k\boldsymbol{\hat{x}}_k^{-} - L_k\boldsymbol{u}_k) \\
+	P_k^{+} &= (I + K_kH_k)P_k^{-}(I + K_kH_k)^T + K_kR_kK_k^T
+\end{split}
+\end{equation}
+
+\end{enumerate}
+
+Se ejecutan cíclicamente los pasos 3-5 para cada instante de tiempo $t_k$. \par 
+
+\subsection{Filtro de Kalman continuo}
+
+Para sistemas continuos, debido a la naturaleza del sistema, es preciso reformular el algoritmo implementado y mostrado en el apartado anterior, para poder ser aplicado a este tipo de sistemas. A continuación se muestra el algoritmo del \emph{Filtro de Kalman continuo}:
+
+\begin{enumerate}
+
+\item El sistema continuo se encuentra representado, tanto su dinámica como la salida de sus sensores mediante las expresiones:
+
+\begin{equation}
+\begin{split}
+	\boldsymbol{\dot{x}}(t) &= A\boldsymbol{x}(t) + B\boldsymbol{u}(t) + \boldsymbol{w}(t) \\
+	\boldsymbol{y}(t) &= C\boldsymbol{x}(t) + D\boldsymbol{u}(t) + \boldsymbol{v}(t) \\
+	E[\boldsymbol{w}(t)\boldsymbol{w}(\tau)^T] &= Q_c \delta(t-\tau) \quad E[\boldsymbol{w}(t)] = 0 \\
+	E[\boldsymbol{v}(t)\boldsymbol{v}(\tau)^T] &= R_c \delta(t-\tau) \quad E[\boldsymbol{v}(t)] = 0 \\
+	E[\boldsymbol{w}(t)\boldsymbol{v}(\tau)^T] &= 0
+\end{split}
+\end{equation}
+
+\item Inicialización del \emph{Filtro de Kalman}:
+
+\begin{equation}
+\begin{split}
+	\boldsymbol{\hat{x}}(0) &= E[\boldsymbol{x}(0)] \\
+	P(0) &= E[(\boldsymbol{x}(0) - \boldsymbol{\hat{x}}(0)) (\boldsymbol{x}(0) - \boldsymbol{\hat{x}}(0))^T]
+\end{split}
+\end{equation}
+
+\item Evolución temporal de las estimaciones del \emph{Filtro de Kalman} y sus covarianzas: 
+
+\begin{equation}
+\begin{split}
+	K(t) &= P(t)C^T R_c^{-1} \\
+	\boldsymbol{\dot{\hat{x}}}(t) &= A\boldsymbol{\hat{x}}(t) + B\boldsymbol{u}(t) + K(t)(\boldsymbol{y}(t) - C\boldsymbol{\hat{x}}(t) - D\boldsymbol{u}(t)) \\
+	\dot{P}(t) &= AP(t) + P(t)A^T - P(t)C^TR_c^{-1}CP + Q_c
+\end{split}
+\end{equation}
+
+\end{enumerate}
+
+\subsection{Filtro de Kalman muestreado}
+
+Para sistemas muestreados, se distingue entre la dinámica del sistema definida por ecuaciones continuas, y el estudio del sistema que se efectúa en instantes discretos de tiempo. A continuación se muestra el algoritmo del \emph{Filtro de Kalman} para sistemas muestreados:
+
+\begin{enumerate}
+
+\item El sistema muestreado se encuentra representado, tanto su dinámica como la salida de sus sensores mediante las expresiones:
+
+\begin{equation}
+\begin{split}
+	\boldsymbol{\dot{x}}(t) &= A\boldsymbol{x}(t) + B\boldsymbol{u}(t) + \boldsymbol{w}(t) \\
+	\boldsymbol{y}_k &= H_k\boldsymbol{x}_k + D\boldsymbol{u}_k + \boldsymbol{v}_k \\
+	E[\boldsymbol{w}(t)\boldsymbol{w}(\tau)^T] &= Q_c \delta(t-\tau) \quad E[\boldsymbol{w}(t)] = 0 \\
+	E[\boldsymbol{v}_k\boldsymbol{v}_j^T] &= R_c \delta_{k-j} \quad E[\boldsymbol{v}_k] = 0 \\
+	E[\boldsymbol{w}(t)\boldsymbol{v}(\tau)^T] &= 0
+\end{split}
+\end{equation}
+
+\item Inicialización del \emph{Filtro de Kalman}:
+
+\begin{equation}
+\begin{split}
+	\boldsymbol{\hat{x}}_0^{+} &= E[\boldsymbol{x}_0] \\
+	P_0^{+}  &= E[(\boldsymbol{x}_0 - \boldsymbol{\hat{x}}_0^{+}) (\boldsymbol{x}_0 - \boldsymbol{\hat{x}}_0^{+})^T]
+\end{split}
+\end{equation}
+
+\item Estimación \emph{a priori} del estado y de la matriz de covarianzas, para $k = 1,2, \ldots$, mediante integración numérica de las expresiones: 
+
+\begin{equation}
+\begin{split}
+	\boldsymbol{\dot{\hat{x}}} &= A\boldsymbol{\hat{x}} + B\boldsymbol{u} \\
+	\dot{P} &= AP + PA^T + Q
+\end{split}
+\end{equation} \\
+\noindent
+estableciendo como límites de integración los instantes $t_k^{-}$ y $t_{k-1}^{+}$, obteniéndose de esta manera los valores $\boldsymbol{\hat{x}}_k^{-}$ y $P_k^{-}$. \par 
+
+\item Cálculo de la matriz de ganancias del \emph{Filtro de Kalman}:
+
+\begin{equation}
+	K_k = P_k^{-}H_k^T(H_kP_k^{-}H_k^T + R_k)^{-1}
+\end{equation}
+
+\item Actualización y estimación \emph{a posteriori} del estado del sistema y de la matriz de covarianzas:
+
+\begin{equation}
+\begin{split}
+	\boldsymbol{\hat{x}}_k^{+} &= \boldsymbol{\hat{x}}_k^{-} + K_k(\boldsymbol{y}_k - _k\boldsymbol{\hat{x}}_k^{-} - L_k\boldsymbol{u}_k) \\
+	P_k^{+} &= (I + K_kH_k)P_k^{-}(I + K_kH_k)^T + K_kR_kK_k^T
+\end{split}
+\end{equation}
+
+\end{enumerate}
+
+\subsection[Propiedades y características]{Propiedades y características del Filtro de Kalman}
+
+Es preciso remarcar aquellos aspectos importantes que el \emph{Filtro de Kalman} impone para el correcto funcionamiento y qué puede esperarse tras su implantación. \par 
+
+El \emph{Filtro de Kalman} propone una solución óptima, bajo ciertas condiciones, a un problema de minimización. La variable a minimizar consiste en el error existente entre la media del estado del sistema (supuestamente el valor real del mismo sin incluir ruido), y las estimaciones efectuadas del mismo. Este proceso puede representarse como:
+
+\[ min \; E[\tilde{x}_k^T S_k \tilde{x}_k] \]
+\noindent
+donde $\tilde{x}_k$ representa el error en la estimación $\tilde{x}_k = x_k - \hat{x}_k$, y $S_k$ una matriz diagonal de ponderación, definida como en la expresión (\ref{eq:ponderacion}). Las dos principales propiedades que han de cumplirse son: \par 
+
+\begin{itemize}
+
+\item El sistema al que se aplica debe ser lineal. Para sistemas no lineales se presentará a continuación una variante del \emph{Filtro de Kalman} para este tipo de sistemas. \par 
+
+\item Los procesos estocásticos de ruido $v_k$ y $w_k$ deben ser independientes, de media nula, y distribución normal (gaussiana) para que el \emph{Filtro de Kalman} produzca la óptima solución al problema mencionado. \par 
+
+\item La obtención de la solución óptima al problema de minimización del error requiere un modelado muy preciso del proceso estocástico que supone el ruido en el sistema. Un error en parámetros como la covarianza puede provocar la divergencia del observador. \par 
+
+\end{itemize}
+
+\section[Filtro de Kalman Extendido]{Generalización del Filtro de Kalman: el Filtro de Kalman Extendido}
+
+El uso y efectividad del \emph{Filtro de Kalman} se basa en el cumplimiento de ciertos requisitos por parte del sistema, que en la gran mayoría de sistemas reales no se cumplen. \par 
+
+Entre estos requisitos, el que presenta mayor importancia es la necesidad de que el sistema a estimar sea lineal. Para el uso del \emph{Filtro de Kalman} en otro tipo de sistemas (no lineales) se requiere una generalización del algoritmo y proceso descrito con anterioridad, si bien, esta generalización supone una pérdida en cuanto a lo óptimo de las estimaciones producidas se refiere. \par 
+
+Al igual que como se realiza en diversos sistemas de control, una alternativa supone linealizar el sistema en torno a un punto de funcionamiento, lo cual sería válido para sistemas en los que las desviaciones del estado con respecto a este punto de funcionamiento son pequeñas, y por tanto, no pudiendo ser generalizable a muchos sistemas reales. \par 
+
+A continuación se va a detallar el algoritmo escogido para la puesta en práctica del estimador de fuerzas externas propuesto en este texto, basado en el denominado \emph{Filtro de Kalman Extendido}, o \acrshort{ekf}. \par 
+
+Esta variante del \emph{Filtro de Kalman} basa su funcionamiento en linealizar el sistema alrededor de las estimaciones del propio observador, considerándolas como punto de funcionamiento, de esta manera se obtiene un sistema lineal alrededor del punto estimado en cada instante. \par 
+
+En el \emph{Filtro de Kalman Extendido} se efectúa una aproximación de primer orden del sistema, truncando el desarrollo de Taylor en el primer término, por lo que únicamente se emplean primeras derivadas de las funciones $f$ y $h$, que modelan la evolución temporal del sistema (su dinámica) y la medida de los sensores, respectivamente. \par 
+
+Al igual que en el caso del Filtro de Kalman original, existen distintas versiones particularizadas para los distintos tipos de sistemas empleados, y a continuación pueden observarse los algoritmos de cada uno. \par 
+
+\subsection{Filtro de Kalman Extendido discreto}
+
+\begin{enumerate}
+
+\item El sistema se encuentra representado, tanto su dinámica como la salida de sus sensores mediante las expresiones:
+
+\begin{equation}
+\begin{split}
+	\boldsymbol{x}_k &= f_{k-1}(\boldsymbol{x}_{k-1},\boldsymbol{u}_{k-1},\boldsymbol{w}_{k-1}) \\
+	\boldsymbol{y}(t) &= h_k(\boldsymbol{x}_k,\boldsymbol{u}_k,\boldsymbol{v}_k) \\
+	E[\boldsymbol{w}_k\boldsymbol{w}_j^T] &= Q_c \delta_{k-j} \quad E[\boldsymbol{w}_k] = 0 \\
+	E[\boldsymbol{v}_k\boldsymbol{v}_j^T] &= R_c \delta_{k-j} \quad E[\boldsymbol{v}_k] = 0 \\
+	E[\boldsymbol{w}_k\boldsymbol{v}_j^T] &= 0
+\end{split}
+\end{equation}
+
+\item Inicialización del \emph{Filtro de Kalman}:
+
+\begin{equation}
+\begin{split}
+	\boldsymbol{\hat{x}}_0^{+} &= E[\boldsymbol{x}_0] \\
+	P_0^{+} &= E[(\boldsymbol{x}_0 - \boldsymbol{\hat{x}}_0^{+}) (\boldsymbol{x}_0 - \boldsymbol{\hat{x}}_0^{+})^T]
+\end{split}
+\end{equation}
+
+\item Linealización de la ecuación de estado y de salida del sistema:
+
+\begin{equation}
+	F_{k-1} = \left.\frac{\partial f}{\partial\boldsymbol{x}} \right|_{\boldsymbol{x} = \boldsymbol{\hat{x}}_{k-1}^{+}}
+\end{equation}
+
+\item Estimación \emph{a priori} del estado y de la matriz de covarianzas, para $k = 1,2, \ldots$ : 
+
+\begin{equation}
+\begin{split}
+	P_k^{-} &= F_{k-1}P_{k-1}^{+}F_{k-1}^T + Q_{k-1} \\
+	\boldsymbol{\hat{x}}_k^{-} &= f_{k-1}(\boldsymbol{\hat{x}}_{k-1}^{+},\boldsymbol{u}_{k-1})
+\end{split}
+\end{equation} 
+
+\item Linealización de la ecuación de salida del sistema:
+
+\begin{equation}
+	H_k = \left.\frac{\partial h}{\partial\boldsymbol{x}} \right|_{\boldsymbol{x} = \boldsymbol{\hat{x}}_k^{-}}
+\end{equation}
+
+\item Cálculo de la matriz de ganancias del \emph{Filtro de Kalman}:
+
+\begin{equation}
+	K_k = P_k^{-}H_k^T(H_kP_k^{-}H_k^T + R_k)^{-1}
+\end{equation}
+
+\item Actualización y estimación \emph{a posteriori} del estado del sistema y de la matriz de covarianzas:
+
+\begin{equation}
+\begin{split}
+	\boldsymbol{\hat{x}}_k^{+} &= \boldsymbol{\hat{x}}_k^{-} + K_k(\boldsymbol{y}_k - h_{k}(\boldsymbol{\hat{x}}_{k}^{-},\boldsymbol{u}_{k})) \\
+	P_k^{+} &= (I + K_kH_k)P_k^{-}(I + K_kH_k)^T + K_kR_kK_k^T
+\end{split}
+\end{equation}
+
+\end{enumerate}
+
+\subsection{Filtro de Kalman Extendido continuo}
+\noindent
+Para sistemas continuos, se expone el algoritmo del \acrshort{ekf}:
+
+\begin{enumerate}
+
+\item Un sistema no lineal continuo puede representarse mediante la expresión general:
+
+\begin{equation}
+\begin{split}
+	\boldsymbol{\dot{x}}(t) &= f(\boldsymbol{x}(t),\boldsymbol{u}(t),\boldsymbol{w}(t),t) \\
+	\boldsymbol{y}(t) &= h(\boldsymbol{x}(t),\boldsymbol{u}(t),\boldsymbol{v}(t),t) \\
+	E[\boldsymbol{w}(t)\boldsymbol{w}(\tau)^T] &= Q_c \delta(t-\tau) \quad E[\boldsymbol{w}(t)] = 0 \\
+	E[\boldsymbol{v}(t)\boldsymbol{v}(\tau)^T] &= R_c \delta(t-\tau) \quad E[\boldsymbol{v}(t)] = 0 \\
+	E[\boldsymbol{w}(t)\boldsymbol{v}(\tau)^T] &= 0
+\end{split}
+\end{equation}
+
+\item Inicialización de la estimación y de la covarianza del sistema: 
+
+\begin{equation}
+\begin{split}
+	\boldsymbol{\hat{x}}(0) &= E[\boldsymbol{x}(0)] \\
+	P(0) &= E[(\boldsymbol{x}(0) - \boldsymbol{\hat{x}}(0)) (\boldsymbol{x}(0) - \boldsymbol{\hat{x}}(0))^T]
+\end{split}
+\end{equation}
+
+\item Linealización del sistema para cada estimación:
+
+\begin{equation}
+	A(t) = \left.\frac{\partial f}{\partial\boldsymbol{x}} \right|_{\boldsymbol{x} = \boldsymbol{\hat{x}}(t)} \quad
+	C(t) = \left.\frac{\partial h}{\partial\boldsymbol{x}} \right|_{\boldsymbol{x} = \boldsymbol{\hat{x}}(t)}
+\end{equation}
+
+\item Evolución temporal de las estimaciones del \emph{Filtro de Kalman} y sus covarianzas: 
+
+\begin{equation}
+\begin{split}
+	K(t) &= P(t)C^T R_c^{-1} \\
+	\boldsymbol{\dot{\hat{x}}}(t) &= f(\boldsymbol{\hat{x}}(t),\boldsymbol{u}(t),t) + K(t)(\boldsymbol{y}(t) - h(\boldsymbol{\hat{x}}(t),\boldsymbol{u}(t),t)) \\
+	\dot{P}(t) &= AP(t) + P(t)A^T - P(t)C^TR_c^{-1}CP + Q_c
+\end{split}
+\end{equation}
+
+\end{enumerate}
+
+
+\subsection{Filtro de Kalman Extendido muestreado}
+
+\begin{enumerate}
+
+\item El sistema muestreado se encuentra representado, tanto su dinámica como la salida de sus sensores mediante las expresiones:
+
+\begin{equation}
+\begin{split}
+	\boldsymbol{\dot{x}}(t) &= f(\boldsymbol{x}(t),\boldsymbol{u}(t),\boldsymbol{w}(t),t) \\
+	\boldsymbol{y}(t) &= h_k(\boldsymbol{x}_k,\boldsymbol{u}_k,\boldsymbol{v}_k) \\
+	E[\boldsymbol{w}(t)\boldsymbol{w}(\tau)^T] &= Q_c \delta(t-\tau) \quad E[\boldsymbol{w}(t)] = 0 \\
+	E[\boldsymbol{v}_k\boldsymbol{v}_j^T] &= R_c \delta_{k-j} \quad E[\boldsymbol{v}_k] = 0 \\
+	E[\boldsymbol{w}(t)\boldsymbol{v}_j^T] &= 0
+\end{split}
+\end{equation}
+
+\item Inicialización del \emph{Filtro de Kalman}:
+
+\begin{equation}
+\begin{split}
+	\boldsymbol{\hat{x}}_0^{+} &= E[\boldsymbol{x}_0] \\
+	P_0^{+}  &= E[(\boldsymbol{x}_0 - \boldsymbol{\hat{x}}_0^{+}) (\boldsymbol{x}_0 - \boldsymbol{\hat{x}}_0^{+})^T]
+\end{split}
+\end{equation}
+
+\item Linealización de la ecuación de estado del sistema:
+
+\begin{equation}
+	F_{k-1} = \left.\frac{\partial f}{\partial\boldsymbol{x}} \right|_{\boldsymbol{x} = \boldsymbol{\hat{x}}_{k-1}^{+}} \quad 
+\end{equation}
+
+\item Estimación \emph{a priori} del estado y de la matriz de covarianzas, para $k = 1,2, \ldots$, mediante integración numérica de las expresiones: 
+
+\begin{equation}
+\begin{split}
+	\boldsymbol{\dot{\hat{x}}}(t) &= f(\boldsymbol{\hat{x}},\boldsymbol{u},0,t) \\
+	\dot{P} &= FP + PF^T + Q
+\end{split}
+\end{equation} \\
+\noindent
+estableciendo como límites de integración los instantes $t_k^{-}$ y $t_{k-1}^{+}$, obteniéndose de esta manera los valores $\boldsymbol{\hat{x}}_k^{-}$ y $P_k^{-}$.  \par 
+
+\item Linealización de la ecuación de salida del sistema:
+
+\begin{equation}
+	H_k = \left.\frac{\partial h}{\partial\boldsymbol{x}} \right|_{\boldsymbol{x} = \boldsymbol{\hat{x}}_k^{-}}
+\end{equation}
+
+\item Cálculo de la matriz de ganancias del \emph{Filtro de Kalman}:
+
+\begin{equation}
+	K_k = P_k^{-}H_k^T(H_kP_k^{-}H_k^T + R_k)^{-1}
+\end{equation}
+
+\item Actualización y estimación \emph{a posteriori} del estado del sistema y de la matriz de covarianzas:
+
+\begin{equation}
+\begin{split}
+	\boldsymbol{\hat{x}}_k^{+} &= \boldsymbol{\hat{x}}_k^{-} + K_k(\boldsymbol{y}_k - h_k(\boldsymbol{\hat{x}}_k^{-},\boldsymbol{u}_k)) \\
+	P_k^{+} &= (I + K_kH_k)P_k^{-}(I + K_kH_k)^T + K_kR_kK_k^T
+\end{split}
+\end{equation}
+
+\end{enumerate}
+
+\subsection[Propiedades y características]{Propiedades y características del Filtro de Kalman Extendido}
+
+El \emph{Filtro de Kalman Extendido} supone una generalización del \emph{Filtro de Kalman} original, con el objetivo de poder ser aplicado a sistemas no lineales. La aproximación efectuada supone linealizar el sistema para cada estimación efectuada por el filtro. \par 
+
+Esta situación supone que las características expuestas para el \emph{Filtro de Kalman} sean locales para el \emph{Filtro de Kalman Extendido}, es decir, si se cumplen las propiedades mencionadas para el sistema linealizado, el \acrshort{ekf} obtendrá una solución local al problema de minimización expuesto en el anterior apartado. \par 
+
+Nótese que la carga computacional requerida para implementar un \emph{Filtro de Kalman Extendido} en un sistema en tiempo real es superior a la necesaria para la ejecución de un \emph{Filtro de Kalman}, debido a la necesidad de efectuar esas derivadas parciales de las funciones. \par 
+
+Una vez detallado el algoritmo en el que se basa el estimador propuesto, es preciso comenzar en el próximo capítulo, con la descripción de los sistemas (real y simulado) en los que se implementará el algoritmo en la realización de los ensayos posteriores. \par 
